@@ -40,7 +40,10 @@ public final class Position {
     }
 
     public boolean isWithinRadius(final Position other, final float radius) {
-        return (float) Math.hypot(this.x - other.x, this.y - other.y) <= radius;
+        float dx = this.x - other.x;
+        float dy = this.y - other.y;
+        return (dx * dx + dy * dy) <= radius * radius;
+//        return (float) Math.hypot(this.x - other.x, this.y - other.y) <= radius;
     }
 
     /**

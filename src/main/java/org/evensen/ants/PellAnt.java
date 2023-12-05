@@ -16,10 +16,10 @@ public class PellAnt implements Ant {
     private static final float SCAN_ANGLE = TAU / 2.5f;
     private static final float SCAN_INCREMENT = (float) (SCAN_ANGLE / 17.0f);
     private static final float NO_FOOD_WEIGHT = -1.0f;
-    private static final float SCAN_RADIUS = 20.0f;
+    private static final float SCAN_RADIUS = 25.0f;
     private static final float MIN_SCAN_RADIUS = 1.0f;
-    private static final float RADIUS_INCREMENT = 4.0f;
-    private static final float MOVE_RATE = 0.74f;
+    private static final float RADIUS_INCREMENT = 5.0f;
+    private static final float MOVE_RATE = 1.74f;
     private static final float CARRYING_MOVE_SCALE = 0.9f;
     private static final float PHEROMONE_DROP_RATE = 0.99f;
     private static final float TURN_RATE = 0.9f;
@@ -27,9 +27,6 @@ public class PellAnt implements Ant {
     private static final float[] RADII_WEIGHTS;
     private static final int DEFAULT_HIT_POINTS = 10;
     private static final float PHEROMONE_STRENGTH = 0.0001f;
-
-//    private double timeSum = 0;
-//    private double timeCount = 0;
 
     static {
         RADII_WEIGHTS = new float[(int) ((SCAN_RADIUS - MIN_SCAN_RADIUS) / RADIUS_INCREMENT + 1)];
@@ -242,26 +239,13 @@ public class PellAnt implements Ant {
 
     private void tryMove(final AntWorld w, final Position newPosition, float newDirection,
                          final Consumer<AntWorld> goalStrategy) {
-//        long startTime = System.nanoTime();
         if (!w.isObstacle(newPosition)) {
-//            long endTime = System.nanoTime();
-//            double duration = (endTime - startTime) / 1000000.0;
-//            this.timeSum += duration;
-//            this.timeCount++;
-//            System.out.println("Average execution time= " + this.timeSum / this.timeCount);
-
             this.position = newPosition;
             float angularDiff = GraphicsMath.angularDifference(newDirection, this.direction) * GraphicsMath.TAU_INV;
             this.pheromonesLeft *= 1.0f - angularDiff * 0.1f;
             this.direction = newDirection;
             goalStrategy.accept(w);
         } else {
-//            long endTime = System.nanoTime();
-//            double duration = (endTime - startTime) / 1000000.0;
-//            this.timeSum += duration;
-//            this.timeCount++;
-//            System.out.println("Average execution time= " + this.timeSum / this.timeCount);
-
             final boolean reachedHorizontalBorder = newPosition.getX() <= 0 || w.getWidth() <= newPosition.getX() - 1;
             final boolean reachedVerticalBorder = newPosition.getY() <= 0 || w.getHeight() <= newPosition.getY() - 1;
             if (reachedVerticalBorder || reachedHorizontalBorder) {
@@ -323,31 +307,6 @@ public class PellAnt implements Ant {
     private enum Action {
         FORAGING,
         CARRYING
-    }
-
-    private static class PositionSet {
-        private final int width;
-        private final BitSet seen;
-
-        public PositionSet(final int width) {
-            this.width = width;
-            this.seen = new BitSet();
-        }
-
-        private int toIndex(final Position p) {
-            return (int) p.getX() + (int) p.getY() * this.width;
-        }
-
-        public boolean hasSeen(final Position p) {
-            if (0 > p.getX() || 0 > p.getY()) {
-                return true;
-            }
-            return this.seen.get(toIndex(p));
-        }
-
-        public void markSeen(final Position p) {
-            this.seen.set(toIndex(p));
-        }
     }
 
     private static class Scent implements Comparable<Scent> {

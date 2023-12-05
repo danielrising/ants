@@ -1,2 +1,0 @@
-# ants
-Simulation of ants

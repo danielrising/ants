@@ -1,39 +1,37 @@
 package org.evensen.ants;
 
-import javafx.geometry.Pos;
-
-import java.util.Random;
-import java.security.SecureRandom;
-
 public class FoodSource {
-    private Position position;
 
-    private int radius;
+    private final Position position;
+    private final int radius;
+    private int foodAmount;
 
-    private static SecureRandom rand = new SecureRandom();
-
-    private int amountOfFood;
-
-    public FoodSource(Position position, int radius, int amountOfFood) {
+    public FoodSource(final Position position, final int radius, int foodAmount) {
         this.position = position;
         this.radius = radius;
-        this.amountOfFood = amountOfFood;
+        this.foodAmount = foodAmount;
     }
 
-    FoodSource(int worldWidth, int worldHeigth, int radiusOrigin, int radiusBound, int amountOfFoodOrigin, int amountOfFoodBound) {
-        // I know this is a mess but Java won't let me declare variables before calling this()
-        this(new Position(rand.nextInt(0, worldWidth - 1), rand.nextInt(0, worldHeigth - 1)), rand.nextInt(radiusOrigin, radiusBound), rand.nextInt(amountOfFoodOrigin, amountOfFoodBound));
-    }
-
-    public boolean containsFood(Position p) {
-        return this.position.isWithinRadius(p, this.radius);
+    public boolean containsFood() {
+        if (this.foodAmount > 0) {
+            return true;
+        }
+        return false;
     }
 
     public void pickupFood() {
-        this.amountOfFood--;
+        this.foodAmount--;
     }
 
-    public int getFood() {
-        return this.amountOfFood;
+    public Position getPosition() {
+        return this.position;
+    }
+
+    public int getRadius() {
+        return this.radius;
+    }
+
+    public int getFoodAmount() {
+        return this.foodAmount;
     }
 }

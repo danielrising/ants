@@ -28,8 +28,8 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Main extends Application {
-    private static final int WORLD_WIDTH = 500;
-    private static final int WORLD_HEIGHT = 250;
+    private static final int WORLD_WIDTH = 400;
+    private static final int WORLD_HEIGHT = 200;
     private static final int ANTS = 10000;
     private static final float PHEROMONE_RATE = 0.7f;
     private static final long MODEL_UPDATE_INTERVAL = 10_000_000L; // Update every 10 ms.

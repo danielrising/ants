@@ -1,73 +1,84 @@
 package org.evensen.ants;
 
-import javafx.geometry.Pos;
-
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class MyAntWorld implements AntWorld {
 
-    private static final float HOME_RADIUS = 20.0F;
-    private final int worldWidth;
+    private static final int FOOD_SOURCE_RADIUS = 10;
+    private static final int FOOD_SOURCE_START_AMOUNT = 5000;
 
-    private final int worldHeight;
+    private static final Random rand = new Random(5);
 
-    private final int numberOfFoodSources;
-
-    private float[][] foragingPheromone;
+    private final int width, height;
     private float[][] foodPheromone;
-
-    private FoodSource[] foodSources;
-
+    private float[][] foragingPheromone;
     private boolean[][] containsFood;
+    private List<FoodSource> foodSources;
 
-    public MyAntWorld(final int worldWidth, final int worldHeight, final int i) {
-        this.worldWidth = worldWidth;
-        this.worldHeight = worldHeight;
-        this.numberOfFoodSources = i;
-        this.foragingPheromone = new float[this.worldWidth][this.worldHeight];
-        this.foodPheromone = new float[this.worldWidth][this.worldHeight];
-        this.foodSources = new FoodSource[this.numberOfFoodSources];
-        Arrays.fill(this.foodSources, createFoodSource());
-        this.containsFood = new boolean[this.worldWidth][this.worldHeight];
+    public MyAntWorld(int width, int height, int foodSources) {
+        this.width = width;
+        this.height = height;
+        this.foodPheromone = new float[width + 1][height + 1];
+        this.foragingPheromone = new float[width + 1][height + 1];
+        this.foodSources = new ArrayList<>();
+        this.containsFood = new boolean[width + 1][height + 1];
+
+        for (int i = 0; i < foodSources; i++) {
+            Position p = new Position(rand.nextFloat(0, this.width - 1), rand.nextFloat(0, this.height - 1));
+            this.foodSources.add(i, new FoodSource(p, FOOD_SOURCE_RADIUS, FOOD_SOURCE_START_AMOUNT));
+        }
+
+        /*
+        for (int i = 0; i < foodSources; i++) {
+            System.out.println(this.foodSources.get(i).getPosition().getX() + ": " + this.foodSources.get(i).getPosition().getY());
+            System.out.println(this.foodSources.get(i).getFoodAmount());
+            System.out.println(this.foodSources.get(i).getRadius());
+        }
+        */
+
         updateContainsFoodMatrix();
+    }
+
+    private void updateContainsFoodMatrix() {
+        for (int i = 0; i < this.width; i++) {
+            for (int j = 0; j < this.height; j++) {
+                Position p = new Position(i, j);
+                this.containsFood[i][j] = false;
+                for (int k = 0; k < this.foodSources.size(); k++) {
+                    FoodSource foodSource = this.foodSources.get(k);
+                    if (p.isWithinRadius(foodSource.getPosition(), foodSource.getRadius()) && foodSource.containsFood()) {
+                        this.containsFood[i][j] = true;
+                    }
+                }
+            }
+        }
     }
 
     @Override
     public int getWidth() {
-        return this.worldWidth;
+        return this.width;
     }
 
     @Override
     public int getHeight() {
-        return this.worldHeight;
+        return this.height;
     }
 
     @Override
     public boolean isObstacle(final Position p) {
-        final boolean outsideLeft = p.getX() < 0;
-        final boolean outsideRight = p.getX() >= this.worldWidth;
-        final boolean outsideUp = p.getY() < 0;
-        final boolean outsideDown = p.getY() >= this.worldHeight;
-        // Is this inefficient? (Doesn't utilize lazy evaluation) Perhaps. But I think this makes the code easier to
-        // read
-        // Average execution time  ~1.5E-5
-        return (outsideLeft || outsideRight || outsideUp || outsideDown);
-        // Average execution time ~1.5E-5 => No difference
-        // return (p.getX() < 0 || p.getX() >= this.worldWidth || p.getY() < 0 || p.getY() >= this.worldHeight);
+        return (p.getX() < 0f || p.getY() < 0f || p.getX() > this.width || p.getY() > this.height);
     }
 
     @Override
     public void dropForagingPheromone(final Position p, final float amount) {
-        final int x = (int) p.getX();
-        final int y = (int) p.getY();
-        this.foragingPheromone[x][y] = amount;
+        this.foragingPheromone[(int)p.getX()][(int)p.getY()] += amount;
     }
 
     @Override
     public void dropFoodPheromone(final Position p, final float amount) {
-        final int x = (int) p.getX();
-        final int y = (int) p.getY();
-        this.foodPheromone[x][y] = amount;
+        this.foodPheromone[(int)p.getX()][(int)p.getY()] += amount;
     }
 
     @Override
@@ -77,16 +88,25 @@ public class MyAntWorld implements AntWorld {
 
     @Override
     public void pickUpFood(final Position p) {
-        // @TODO
-        for (int i = 0; i < this.numberOfFoodSources; i++) {
-            // Assumes at this point that foodSources contains food
-            if (this.foodSources[i].containsFood(p)) {
-                this.foodSources[i].pickupFood();
-                if (this.foodSources[i].getFood() < 1) {
-                    this.foodSources[i] = createFoodSource();
+        if (this.containsFood[(int)p.getX()][(int)p.getY()]) {
+            for (int i = 0; i < this.foodSources.size(); i++) {
+                FoodSource foodSource = this.foodSources.get(i);
+                if (p.isWithinRadius(foodSource.getPosition(), foodSource.getRadius()) && foodSource.containsFood()) {
+                    foodSource.pickupFood();
+                    updateFoodReserves();
+                    //System.out.println(i + ": " + foodSource.getFoodAmount());
+                    return;
                 }
+            }
+        }
+    }
+
+    private void updateFoodReserves() {
+        for (int i = 0; i < this.foodSources.size(); i++) {
+            if (!(this.foodSources.get(i).containsFood())) {
+                Position p = new Position(rand.nextFloat(0, this.width - 1), rand.nextFloat(0, this.height - 1));
+                this.foodSources.set(i, new FoodSource(p, FOOD_SOURCE_RADIUS, FOOD_SOURCE_START_AMOUNT));
                 updateContainsFoodMatrix();
-                return;
             }
         }
     }
@@ -98,32 +118,22 @@ public class MyAntWorld implements AntWorld {
 
     @Override
     public float getForagingStrength(final Position p) {
-        final int x = (int) p.getX();
-        final int y = (int) p.getY();
-        return this.foragingPheromone[x][y];
+        return this.foragingPheromone[(int)p.getX()][(int)p.getY()];
     }
 
     @Override
     public float getFoodStrength(final Position p) {
-        final int x = (int) p.getX();
-        final int y = (int) p.getY();
-        return this.foodPheromone[x][y];
+        return this.foodPheromone[(int)p.getX()][(int)p.getY()];
     }
 
-    // Abstraction layer containsFood() that checks the containsFood-matrix
     @Override
     public boolean containsFood(final Position p) {
-        int x = (int) p.getX();
-        int y = (int) p.getY();
-        return this.containsFood[x][y];
-    }
-
-    // Actual containsFood() that is used to update matrix
-    private boolean containsFood(final int x, final int y) {
-        final Position p = new Position(x, y);
-        for (int i = 0; i < this.numberOfFoodSources; i++) {
-            if (this.foodSources[i].containsFood(p)) {
-                return true;
+        if (this.containsFood[(int)p.getX()][(int)p.getY()]) {
+            for (int i = 0; i < this.foodSources.size(); i++) {
+                FoodSource foodSource = this.foodSources.get(i);
+                if (p.isWithinRadius(foodSource.getPosition(), foodSource.getRadius()) && foodSource.containsFood()) {
+                    return true;
+                }
             }
         }
         return false;
@@ -131,14 +141,12 @@ public class MyAntWorld implements AntWorld {
 
     @Override
     public long getFoodCount() {
-        return 0L;
+        return 0;
     }
 
     @Override
     public boolean isHome(final Position p) {
-        final float centerY = this.worldHeight / 2.0F;
-        final Position center = new Position(this.worldWidth, centerY);
-        return center.isWithinRadius(p, HOME_RADIUS);
+        return p.isWithinRadius(new Position(this.width, this.height/2), 20);
     }
 
     @Override
@@ -147,24 +155,12 @@ public class MyAntWorld implements AntWorld {
     }
 
     @Override
-    public void setObstacle(final Position position, final boolean value) {
+    public void setObstacle(final Position p, final boolean add) {
 
     }
 
     @Override
-    public void hitObstacle(final Position position, final float strength) {
+    public void hitObstacle(final Position p, final float strength) {
 
-    }
-
-    private FoodSource createFoodSource() {
-        return new FoodSource(this.worldWidth, this.worldHeight, 5, 10, 500, 1000);
-    }
-
-    private void updateContainsFoodMatrix() {
-        for (int x = 0; x < this.worldWidth; x++) {
-            for (int y = 0; y < this.worldHeight; y++) {
-                this.containsFood[x][y] = containsFood(x, y);
-            }
-        }
     }
 }

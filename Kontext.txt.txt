@@ -1,0 +1,8 @@
+Kontext runt feromoner -- förklara varför de finns och hur myrorna interagerar med dem!
+Förtydliga punkt 6 -- att det handlar om en position. Här handlar det bara om en cirkel där det finns mat.
+
+Förtydliga punkt 9.
+
+Dokumentera hela gränssnittet AntWorld.
+
+När man har problem med att förstå vad metoder gör/ska göra.
