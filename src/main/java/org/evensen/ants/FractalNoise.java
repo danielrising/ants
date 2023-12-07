@@ -57,6 +57,16 @@ public enum FractalNoise {
         return interpolate(ix0, ix1, sy) * 0.5 + 0.5;
     }
 
+    /**
+     * Generates some fractal noise with the properties that the same parameters alway will generate the same values.
+     * @param x The x-value of the position to get noise for.
+     * @param y The y-value of the position to get noise for.
+     * @param persistence How rapidly the amplitude should fall off for each octave.
+     * @param firstOctave The first octave -- set to 1 for large variations.
+     * @param lastOctave The last octave -- set to 10 for a lot of small details (in combination with persistence >= 0.6)
+     * @param seed Gives rise to a unique noise map.
+     * @return The noise value for the above parameters.
+     */
     public static double getNoise(final double x, final double y,
                                   final double persistence, final int firstOctave, final int lastOctave, final long seed) {
         double acc = 0;

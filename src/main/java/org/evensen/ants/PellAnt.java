@@ -14,19 +14,19 @@ import static org.evensen.ants.GraphicsMath.TAU;
 public class PellAnt implements Ant {
     private static final float PI = (float) Math.PI;
     private static final float SCAN_ANGLE = TAU / 2.5f;
-    private static final float SCAN_INCREMENT = (float) (SCAN_ANGLE / 17.0f);
-    private static final float NO_FOOD_WEIGHT = -1.0f;
-    private static final float SCAN_RADIUS = 25.0f;
+    private static final float SCAN_INCREMENT = (float) (SCAN_ANGLE / 19.0f);
+    private static final float NO_FOOD_WEIGHT = -4.0f;
+    private static final float SCAN_RADIUS = 30.0f;
     private static final float MIN_SCAN_RADIUS = 1.0f;
     private static final float RADIUS_INCREMENT = 5.0f;
     private static final float MOVE_RATE = 1.74f;
-    private static final float CARRYING_MOVE_SCALE = 0.9f;
+    private static final float CARRYING_MOVE_SCALE = 0.5f;
     private static final float PHEROMONE_DROP_RATE = 0.99f;
     private static final float TURN_RATE = 0.9f;
-    private static final float SCENT_DEVIATION = 0.75f;
+    private static final float SCENT_DEVIATION = 0.01f;
     private static final float[] RADII_WEIGHTS;
     private static final int DEFAULT_HIT_POINTS = 10;
-    private static final float PHEROMONE_STRENGTH = 0.0001f;
+    private static final float PHEROMONE_STRENGTH = 0.001f;
 
     static {
         RADII_WEIGHTS = new float[(int) ((SCAN_RADIUS - MIN_SCAN_RADIUS) / RADIUS_INCREMENT + 1)];
@@ -101,7 +101,7 @@ public class PellAnt implements Ant {
 
     private final BehaviourState carryingState;
     private final BehaviourState foragingState;
-    private  BehaviourState currentState;
+    private BehaviourState currentState;
 
     private final float pheromoneRate;
     private final SplittableGenerator rng;
@@ -152,7 +152,7 @@ public class PellAnt implements Ant {
                                     Function<Position, Float> secondaryScentFunction,
                                     final float noFoodWeight) {
         if (null == secondaryScentFunction) {
-            secondaryScentFunction = p -> 0.0f;
+            secondaryScentFunction = p -> w.isObstacle(p) ? 0.1f : 0f;
         }
         final float strongestScent = 0;
         final float strongestAngle = this.direction;
@@ -168,19 +168,17 @@ public class PellAnt implements Ant {
             for (float radius = MIN_SCAN_RADIUS; SCAN_RADIUS > radius; radius += RADIUS_INCREMENT) {
                 final Position offset = this.position.offset(xOff * radius, yOff * radius);
                 if (w.isObstacle(offset)) {
-                    scentAcc = 0;
+                    scentAcc -= RADII_WEIGHTS[radiusIndex];
                     break;
                 }
                 scentAcc += primaryScentFunction.apply(offset) * RADII_WEIGHTS[radiusIndex];
-                negativeScentAcc += secondaryScentFunction.apply(offset) * RADII_WEIGHTS[radiusIndex] * 0.1f;
+                negativeScentAcc += secondaryScentFunction.apply(offset) * RADII_WEIGHTS[radiusIndex];
                 radiusIndex++;
             }
             scentAcc -= negativeScentAcc;
+            scentAcc *= ((float) this.rng.nextGaussian() * SCENT_DEVIATION + 2.0f);
             if (scentAcc > 0) {
-                scentAcc *= ((float) this.rng.nextGaussian() * SCENT_DEVIATION + 10.0f);
-                if (scentAcc > 0) {
-                    bestScents.add(new Scent(theta, scentAcc));
-                }
+                bestScents.add(new Scent(theta, scentAcc));
             }
         }
 
@@ -219,7 +217,7 @@ public class PellAnt implements Ant {
                     break;
                 }
                 if (typeMapping.apply(offset)) {
-                    if ( isPathClear(w, theta, MIN_SCAN_RADIUS, radius * this.moveRate)) {
+                    if (isPathClear(w, theta, MIN_SCAN_RADIUS, radius * this.moveRate)) {
                         strongestAngle = (theta + TAU) % TAU;
                         typeDistance = radius;
                     }
@@ -268,7 +266,7 @@ public class PellAnt implements Ant {
             return;
         }
         replenishPheromones(w);
-        final boolean hasPheromones = 1.0E-6f < this.pheromonesLeft;
+        final boolean hasPheromones = 1.0E-4f < this.pheromonesLeft;
 
         float bestDirection = this.currentState.goalAngleScan.apply(w);
         if (hasPheromones) {
@@ -284,8 +282,11 @@ public class PellAnt implements Ant {
         if (bestDirection < 0) {
             bestDirection = this.currentState.getPheromoneDirection.apply(w, hasPheromones);
         }
+        if (bestDirection < 0) {
+            bestDirection = (float) (this.direction + this.rng.nextGaussian() * 0.01);
+        }
 
-        final float newDirection = bestDirection * (TURN_RATE) + this.direction * (1.0f - TURN_RATE);
+        final float newDirection = bestDirection;
         final Position newPosition = this.position.move(this.carriesFood ? this.carryingMoveRate : this.moveRate,
                 newDirection);
         tryMove(w, newPosition, newDirection, this.currentState.goalStrategy);

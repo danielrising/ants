@@ -32,8 +32,8 @@ public class AntColony {
         final long startTime = System.nanoTime();
         synchronized (this) {
             this.ants.sort((o1, o2) -> {
-                final float x1 = o1.getPosition().getX();
-                final float x2 = o2.getPosition().getX();
+                final float x1 = o1.getPosition().getY();
+                final float x2 = o2.getPosition().getY();
                 if (x1 < x2) {
                     return -1;
                 } else if (x1 > x2) {

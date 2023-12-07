@@ -4,6 +4,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
 import org.evensen.ants.AntWorld;
+import org.evensen.ants.Position;
 
 public class FoodRenderer {
     private static final int COLOR_PRIMARY = 0xFFA4DE02;
@@ -139,12 +140,12 @@ public class FoodRenderer {
         int j = i;
         for (int x = 0; x < world.getWidth(); x++) {
             for (int k = 0; k < scale; k++) {
-                final org.evensen.ants.Position p = new org.evensen.ants.Position(x, y);
+                final Position p = new Position(x, y);
                 if (world.containsFood(p)) {
                     for (int offsetX = 1; offsetX <= HIGHLIGHT_WIDTH; offsetX++) {
                         for (int offsetY = 1; offsetY <= HIGHLIGHT_HEIGHT; offsetY++) {
-                            final org.evensen.ants.Position offsetP = p.offset(offsetX, offsetY);
-                            if (!world.containsFood(offsetP) && offsetP.isInBounds(world.getWidth(), world.getHeight())) {
+                            final Position offsetP = p.offset(offsetX, offsetY);
+                            if (offsetP.isInBounds(world.getWidth(), world.getHeight()) && !world.containsFood(offsetP)) {
                                 buffer[j] = COLOR_HIGHLIGHT;
                                 break;
                             } else {

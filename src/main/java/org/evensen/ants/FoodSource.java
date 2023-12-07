@@ -2,36 +2,29 @@ package org.evensen.ants;
 
 public class FoodSource {
 
-    private final Position position;
-    private final int radius;
-    private int foodAmount;
+    private final int r;
+    private final Position pos;
+    private int amount;
 
-    public FoodSource(final Position position, final int radius, int foodAmount) {
-        this.position = position;
-        this.radius = radius;
-        this.foodAmount = foodAmount;
+    public FoodSource(int foodAmount, Position pos, int r) {
+        this.pos = pos;
+        this.r = r;
+        this.amount = foodAmount;
     }
 
     public boolean containsFood() {
-        if (this.foodAmount > 0) {
-            return true;
-        }
-        return false;
+        return this.amount > 0;
     }
 
     public void pickupFood() {
-        this.foodAmount--;
+        this.amount--;
     }
 
     public Position getPosition() {
-        return this.position;
+        return this.pos;
     }
 
     public int getRadius() {
-        return this.radius;
-    }
-
-    public int getFoodAmount() {
-        return this.foodAmount;
+        return this.r;
     }
 }
