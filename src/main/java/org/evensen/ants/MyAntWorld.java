@@ -33,10 +33,8 @@ public class MyAntWorld implements AntWorld {
 
         // Initialize food sources
         for (int i = 0; i < foodSources; i++) {
-            final float x = rand.nextFloat(0.0f, (float) (this.width - 1));    // x-position, middle of food source
-            final float y = rand.nextFloat(0.0f, (float) (this.height - 1));   // y-position, middle of food source
-            Position p = new Position(x, y); // as Position
-            this.foodSources.add(i, new FoodSource(FOOD_SOURCE_START_AMOUNT, p, FOOD_SOURCE_RADIUS));
+            final FoodSource source = newFoodSource();
+            this.foodSources.add(source);
         }
 
         // Initialize contains food matrix
@@ -124,21 +122,21 @@ public class MyAntWorld implements AntWorld {
 
             // If it was the last piece of food, create new source and update matrix
             if (!source.containsFood()) {
-                newFoodReserve(i);
+                this.foodSources.set(i, newFoodSource());
                 updateContainsFoodMatrix();
             }
         }
     }
 
     // Creates a new (randomly positioned) food reserve at index i (with default amount and radius)
-    private void newFoodReserve(final int i) {
+    private FoodSource newFoodSource() {
         // Random position for new food source
         final float x = rand.nextFloat(0.0f, (float) (this.width - 1));
         final float y = rand.nextFloat(0.0f, (float) (this.height - 1));
         final Position p = new Position(x, y);
 
         // Set new food reserve
-        this.foodSources.set(i, new FoodSource(FOOD_SOURCE_START_AMOUNT, p, FOOD_SOURCE_RADIUS));
+        return new FoodSource(FOOD_SOURCE_START_AMOUNT, p, FOOD_SOURCE_RADIUS);
     }
 
     @Override

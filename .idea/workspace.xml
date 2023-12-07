@@ -5,16 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a98aa3ae-1b6b-478d-99f1-dc03ad0c91d2" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/evensen/ants/AntColony.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/evensen/ants/AntColony.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/evensen/ants/FoodSource.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/evensen/ants/FoodSource.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/evensen/ants/FractalNoise.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/evensen/ants/FractalNoise.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/evensen/ants/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/evensen/ants/Main.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/evensen/ants/MyAntWorld.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/evensen/ants/MyAntWorld.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/evensen/ants/PellAnt.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/evensen/ants/PellAnt.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/evensen/ants/render/AntColonyRenderer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/evensen/ants/render/AntColonyRenderer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/evensen/ants/render/FoodRenderer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/evensen/ants/render/FoodRenderer.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -99,7 +91,7 @@
       <workItem from="1701708121582" duration="13793000" />
       <workItem from="1701773798475" duration="97000" />
       <workItem from="1701774169354" duration="26000" />
-      <workItem from="1701943411580" duration="6090000" />
+      <workItem from="1701943411580" duration="8157000" />
     </task>
     <servers />
   </component>
