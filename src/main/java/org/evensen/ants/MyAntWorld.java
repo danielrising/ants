@@ -3,21 +3,26 @@ package org.evensen.ants;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.lang.Math;
 
 public class MyAntWorld implements AntWorld {
 
     // Constants
     private static final int FOOD_SOURCE_RADIUS = 10;
-    private static final int FOOD_SOURCE_START_AMOUNT = 5000;
+    private static final int FOOD_SOURCE_START_AMOUNT = 50000;
+    private static final float MAX_PHEROMONE_LEVEL = 1.0f;
+    private static final float PHEROMONE_DROPOFF = 0.95F;
+    private static final float PHEROMONE_NEIGHBOUR_KEEP = 0.5f;
+    private static final int[][] ADJACENT_CELL_DELTAS = {{-1,  1}, { 0,  1}, {1,  1},
+                                                         {-1,  0},           {1,  0},
+                                                         {-1, -1}, { 0, -1}, {1, -1}}; // Pls don't auto format :(
 
     // Generators
     private static final Random rand = new Random(5L);
 
     // Instance variables
     private final int width, height;
-    private final float[][] foodPheromone;
-    private final float[][] foragingPheromone;
+    private float[][] foodPheromone;
+    private float[][] foragingPheromone;
     private final int[][] containsFood;
     private final List<FoodSource> foodSources;
 
@@ -26,10 +31,10 @@ public class MyAntWorld implements AntWorld {
         // Initialize instance variables and set capacity
         this.width = w;
         this.height = h;
-        this.foodPheromone = new float[w + 1][h + 1];
-        this.foragingPheromone = new float[w + 1][h + 1];
+        this.foodPheromone = new float[w][h];
+        this.foragingPheromone = new float[w][h];
         this.foodSources = new ArrayList<>(foodSources);
-        this.containsFood = new int[w + 1][h + 1];
+        this.containsFood = new int[w][h];
 
         // Initialize food sources
         for (int i = 0; i < foodSources; i++) {
@@ -44,8 +49,8 @@ public class MyAntWorld implements AntWorld {
     // Used for optimizing, through avoiding unnecessary multiple similar calculations
     // Contains the index of the food source that contains the associated food (-1 if there is no food)
     private void updateContainsFoodMatrix() {
-        for (int x = 0; x < this.width + 1; x++) {
-            for (int y = 0; y < this.height + 1; y++) {
+        for (int x = 0; x < this.width; x++) {
+            for (int y = 0; y < this.height; y++) {
 
                 // Set every element to not contain food as default
                 this.containsFood[x][y] = -1;
@@ -86,20 +91,41 @@ public class MyAntWorld implements AntWorld {
         return !p.isInBounds(this.width, this.height);
     }
 
-    // Rounds position to the closest integer cell
-    @Override
-    public void dropForagingPheromone(final Position p, final float amount) {
-        final float x = p.getX();
-        final float y = p.getY();
-        this.foragingPheromone[Math.round(x)][Math.round(y)] += amount;
+    public boolean isObstacle(final float x, final float y) {
+        final boolean tooFarLeft = 0.0F > x;
+        final boolean tooFarRight = x >= this.width;
+        final boolean tooFarDown = 0.0F > y ;
+        final boolean tooFarUp = y >= this.height;
+        return tooFarLeft || tooFarRight || tooFarDown || tooFarUp;
     }
 
-    // Rounds position to the closest integer cell
+    @Override
+    public void dropForagingPheromone(final Position p, final float amount) {
+        dropPheromone(this.foragingPheromone, p, amount);
+    }
+
     @Override
     public void dropFoodPheromone(final Position p, final float amount) {
-        final float x = p.getX();
-        final float y = p.getY();
-        this.foodPheromone[Math.round(x)][Math.round(y)] += amount;
+        dropPheromone(this.foodPheromone, p, amount);
+    }
+
+    // Abstract drop pheromone method
+    private void dropPheromone(final float[][] pheromoneMatrix, final Position p, final float amount) {
+        // Round to nearest cell
+        final int x = (int) Math.floor(p.getX());
+        final int y = (int) Math.floor(p.getY());
+
+        // Already max value // TODO remove this?
+        if (pheromoneMatrix[x][y] == MAX_PHEROMONE_LEVEL) {
+            return;
+        }
+
+        // Goes above max value, cap it
+        if (pheromoneMatrix[x][y] + amount > MAX_PHEROMONE_LEVEL) {
+            pheromoneMatrix[x][y] = MAX_PHEROMONE_LEVEL;
+        } else { // Add appropriate amount to cell
+            pheromoneMatrix[x][y] += amount;
+        }
     }
 
     @Override
@@ -113,7 +139,7 @@ public class MyAntWorld implements AntWorld {
         final float y = p.getY();
 
         // Index of first (close-enough) food source
-        final int i = this.containsFood[Math.round(x)][Math.round(y)];
+        final int i = this.containsFood[(int) Math.floor(x)][(int )Math.floor(y)];
 
         // There is food to pickup
         if (i != -1) {
@@ -149,7 +175,7 @@ public class MyAntWorld implements AntWorld {
     public float getForagingStrength(final Position p) {
         final float x = p.getX();
         final float y = p.getY();
-        return this.foragingPheromone[Math.round(x)][Math.round(y)];
+        return this.foragingPheromone[(int) Math.floor(x)][(int) Math.floor(y)];
     }
 
     // Rounds position to the closest integer cell
@@ -157,7 +183,7 @@ public class MyAntWorld implements AntWorld {
     public float getFoodStrength(final Position p) {
         final float x = p.getX();
         final float y = p.getY();
-        return this.foodPheromone[Math.round(x)][Math.round(y)];
+        return this.foodPheromone[(int) Math.floor(x)][(int) Math.floor(y)];
     }
 
     // Simply checks the already calculated matrix
@@ -165,7 +191,7 @@ public class MyAntWorld implements AntWorld {
     public boolean containsFood(final Position p) {
         final float x = p.getX();
         final float y = p.getY();
-        return this.containsFood[Math.round(x)][Math.round(y)] != -1;
+        return this.containsFood[(int) Math.floor(x)][(int) Math.floor(y)] != -1;
     }
 
     @Override
@@ -180,7 +206,59 @@ public class MyAntWorld implements AntWorld {
 
     @Override
     public void dispersePheromones() {
+        dispersePheromone(this.foragingPheromone);
+        dispersePheromone(this.foodPheromone);
 
+        dropFoodSourcePheromones();
+    }
+
+    private void dispersePheromone(final float[][] pheromone) {
+        final float[][] tmpP = new float[this.width][this.height];
+        final float numberOfNeighbours = 8.0F;
+        for(int x = 0; x < this.width; x++) {
+            for(int y = 0; y < this.height; y++) {
+                float npl = 0.0F;
+                if (!isObstacle(x, y)) {
+                    npl = sumAdjacentCells(x, y, pheromone);
+                    npl = ((1.0F - PHEROMONE_NEIGHBOUR_KEEP) * npl) / numberOfNeighbours + (PHEROMONE_NEIGHBOUR_KEEP * (pheromone[x][y]));
+                }
+                tmpP[x][y] = npl * PHEROMONE_DROPOFF;
+            }
+        }
+        if (pheromone == this.foodPheromone) {
+            this.foodPheromone = tmpP;
+        } else {
+            this.foragingPheromone = tmpP;
+        }
+    }
+
+    private void dropFoodSourcePheromones() {
+        for (final FoodSource source : this.foodSources) {
+            dropFoodPheromone(source.getPosition(), 1.0F);
+        }
+    }
+
+    private float sumAdjacentCells(final int x0, final int y0, float[][] matrix) {
+        float sum = 0.0F;
+        for (int[] deltas : ADJACENT_CELL_DELTAS) {
+
+                // Truncate coordinates to the closest inbound value
+                int x = truncate(0, this.width - 1, x0 + deltas[0]);
+                int y = truncate(0, this.height - 1, y0 + deltas[1]);
+
+                sum += matrix[x][y];
+        }
+        return sum;
+    }
+
+    private static int truncate(final int min, final int max, int val) {
+        if (val < min) {
+            return min;
+        }
+        if (val > max) {
+            return max;
+        }
+        return val;
     }
 
     @Override
@@ -192,4 +270,4 @@ public class MyAntWorld implements AntWorld {
     public void hitObstacle(final Position p, final float strength) {
 
     }
-}
+                 }
