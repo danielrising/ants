@@ -8,5 +8,5 @@ public interface DispersalPolicy {
      * @param p The position to get levels from.
      * @return A new array with suggested new pheromone levels.
      */
-    float getDispersedValue(AntWorld w, Position p, boolean isForage);
+    float[] getDispersedValue(AntWorld w, Position p);
 }

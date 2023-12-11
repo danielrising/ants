@@ -4,12 +4,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * ANT WORLD
+ */
 public class MyAntWorld implements AntWorld {
 
     // Constants
     private static final int FOOD_SOURCE_RADIUS = 10;
     private static final int FOOD_SOURCE_START_AMOUNT = 50000;
     private static final float MAX_PHEROMONE_LEVEL = 1.0f;
+    private static final float PHEROMONE_DROPOFF = 0.95F;
+    private static final float PHEROMONE_NEIGHBOUR_KEEP = 0.5f;
+    private static final float NUMBER_OF_NEIGHBOURS = 8.0f;
+    private static final int[][] ADJACENT_CELL_DELTAS = {{-1,  1}, { 0,  1}, {1,  1},
+                                                         {-1,  0},           {1,  0},
+                                                         {-1, -1}, { 0, -1}, {1, -1}}; // Pls don't auto format :(
 
     // Generators
     private static final Random rand = new Random(5L);
@@ -22,8 +31,13 @@ public class MyAntWorld implements AntWorld {
     private final List<FoodSource> foodSources;
     private final DispersalPolicy dispersalPolicy;
 
+    /**
+     * @param w width of world
+     * @param h height of world
+     * @param foodSources number of food sources to create
+     */
     // Constructor, width of world, height of world, number of food sources
-    public MyAntWorld(final int w, final int h, final int foodSources, DispersalPolicy dispersalPolicy) {
+    public MyAntWorld(final int w, final int h, final int foodSources, final DispersalPolicy dispersalPolicy) {
         // Initialize instance variables and set capacity
         this.width = w;
         this.height = h;
@@ -45,6 +59,7 @@ public class MyAntWorld implements AntWorld {
 
     // Used for optimizing, through avoiding unnecessary multiple similar calculations
     // Contains the index of the food source that contains the associated food (-1 if there is no food)
+    @SuppressWarnings({"MethodWithMultipleLoops", "FeatureEnvy"})
     private void updateContainsFoodMatrix() {
         for (int x = 0; x < this.width; x++) {
             for (int y = 0; y < this.height; y++) {
@@ -53,8 +68,9 @@ public class MyAntWorld implements AntWorld {
                 this.containsFood[x][y] = -1;
 
                 // For each food (But with index as that is needed)
-                for (int i = 0; i < this.foodSources.size(); i++) {
-                    FoodSource source = this.foodSources.get(i);
+                final int amountOfSources = this.foodSources.size();
+                for (int i = 0; i < amountOfSources; i++) {
+                    final FoodSource source = this.foodSources.get(i);
 
                     // Food source variables
                     final Position sourceP = source.getPosition();
@@ -62,9 +78,9 @@ public class MyAntWorld implements AntWorld {
                     final boolean containsFood = source.containsFood();
 
                     // Current matrix position
-                    Position p = new Position(x, y);
+                    final Position p = new Position((float) x, (float) y);
 
-                    // Does current cell contain food
+                    // Current source has food there -> Update matrix
                     if (p.isWithinRadius(sourceP, sourceR) && containsFood){
                         this.containsFood[x][y] = i;
                     }
@@ -88,14 +104,6 @@ public class MyAntWorld implements AntWorld {
         return !p.isInBounds(this.width, this.height);
     }
 
-    public boolean isObstacle(final float x, final float y) {
-        final boolean tooFarLeft = 0.0F > x;
-        final boolean tooFarRight = x >= this.width;
-        final boolean tooFarDown = 0.0F > y ;
-        final boolean tooFarUp = y >= this.height;
-        return tooFarLeft || tooFarRight || tooFarDown || tooFarUp;
-    }
-
     @Override
     public void dropForagingPheromone(final Position p, final float amount) {
         dropPheromone(this.foragingPheromone, p, amount);
@@ -107,45 +115,40 @@ public class MyAntWorld implements AntWorld {
     }
 
     // Abstract drop pheromone method
-    private void dropPheromone(final float[][] pheromoneMatrix, final Position p, final float amount) {
-        // Round to nearest cell
-        final int x = (int) Math.floor(p.getX());
-        final int y = (int) Math.floor(p.getY());
-
-        // Already max value
-        if (pheromoneMatrix[x][y] == MAX_PHEROMONE_LEVEL) {
-            return;
-        }
+    private static void dropPheromone(final float[][] pheromoneMatrix, final Position p, final float amount) {
+        // x & y floored indexes
+        final int x = p.floorX();
+        final int y = p.floorY();
 
         // Goes above max value, cap it
         if (pheromoneMatrix[x][y] + amount > MAX_PHEROMONE_LEVEL) {
             pheromoneMatrix[x][y] = MAX_PHEROMONE_LEVEL;
-        } else { // Add appropriate amount to cell
+        }
+
+        // Add appropriate amount to cell
+        else {
             pheromoneMatrix[x][y] += amount;
         }
     }
 
     @Override
-    public void dropFood(final Position p) {
-
-    }
+    public void dropFood(final Position p) { }
 
     @Override
     public void pickUpFood(final Position p) {
-        final float x = p.getX();
-        final float y = p.getY();
 
         // Index of first (close-enough) food source
-        final int i = this.containsFood[(int) Math.floor(x)][(int )Math.floor(y)];
+        final int i = this.containsFood[p.floorX()][p.floorY()];
 
         // There is food to pickup
         if (i != -1) {
-            FoodSource source = this.foodSources.get(i);
+            final FoodSource source = this.foodSources.get(i);
             source.pickupFood();
 
             // If it was the last piece of food, create new source and update matrix
             if (!source.containsFood()) {
-                this.foodSources.set(i, newFoodSource());
+                final FoodSource newSource = newFoodSource();
+                this.foodSources.set(i, newSource);
                 updateContainsFoodMatrix();
             }
         }
@@ -164,80 +167,135 @@ public class MyAntWorld implements AntWorld {
 
     @Override
     public float getDeadAntCount(final Position p) {
-        return 0;
+        return 0.0f;
     }
 
-    // Rounds position to the closest integer cell
     @Override
     public float getForagingStrength(final Position p) {
-        final float x = p.getX();
-        final float y = p.getY();
-        return this.foragingPheromone[(int) Math.floor(x)][(int) Math.floor(y)];
+        return this.foragingPheromone[p.floorX()][p.floorY()];
     }
 
-    // Rounds position to the closest integer cell
     @Override
     public float getFoodStrength(final Position p) {
-        final float x = p.getX();
-        final float y = p.getY();
-        return this.foodPheromone[(int) Math.floor(x)][(int) Math.floor(y)];
+        return this.foodPheromone[p.floorX()][p.floorY()];
     }
 
     // Simply checks the already calculated matrix
     @Override
     public boolean containsFood(final Position p) {
-        final float x = p.getX();
-        final float y = p.getY();
-        return this.containsFood[(int) Math.floor(x)][(int) Math.floor(y)] != -1;
+        return this.containsFood[p.floorX()][p.floorY()] != -1; // -1 Represents no food present
     }
 
     @Override
     public long getFoodCount() {
-        return 0;
+        return 0L;
     }
 
     @Override
     public boolean isHome(final Position p) {
-        return p.isWithinRadius(new Position(this.width, this.height/2), 20);
+        return p.isWithinRadius(new Position((float) this.width, (float) this.height / 2.0F), 20.0F);
     }
 
-    @Override
     public void dispersePheromones() {
-        dispersePheromones(this.foragingPheromone);
-        dispersePheromones(this.foodPheromone);
+        // Temporary matrices for new pheromone levels - Food and Forage respectively
+        final float[][] tmpFood = new float[this.width][this.height];
+        final float[][] tmpForage = new float[this.width][this.height];
 
-        dropFoodSourcePheromones();
-    }
-
-    private void dispersePheromones(final float[][] pheromone) {
-        final float[][] tmpP = new float[this.width][this.height];
-        boolean isForage = pheromone == this.foragingPheromone;
         for(int x = 0; x < this.width; x++) {
             for(int y = 0; y < this.height; y++) {
-                Position p = new Position(x, y);
-                tmpP[x][y] = this.dispersalPolicy.getDispersedValue(this, p, isForage);
+                // Current cell-position
+                final Position p = new Position((float) x, (float) y);
+
+                // New pheromone levels
+                final float[] newLevels = this.dispersalPolicy.getDispersedValue(this, p);
+
+                // Update temp matrices
+                tmpFood[x][y] = newLevels[0];
+                tmpForage[x][y] = newLevels[1];
             }
         }
-        if (isForage) {
-            this.foragingPheromone = tmpP;
-        } else {
-            this.foodPheromone = tmpP;
-        }
+
+        // Update matrices with new pheromone levels
+        this.foodPheromone = tmpFood;
+        this.foragingPheromone = tmpForage;
+        dropFoodSourcePheromones();
     }
 
     private void dropFoodSourcePheromones() {
         for (final FoodSource source : this.foodSources) {
-            dropFoodPheromone(source.getPosition(), 1.0F);
+            final Position p = source.getPosition();
+            dropFoodPheromone(p, 1.0F);
         }
     }
 
-    @Override
-    public void setObstacle(final Position p, final boolean add) {
+    /**
+     * Calls the selfContainedDispersePheromone function for each relevant pheromone type
+     *  Also drops pheromones from all food sources
+     */
+    @SuppressWarnings({"unused", "PublicMethodNotExposedInInterface"})
+    public void selfContainedDispersePheromones() {
+        selfContainedDispersePheromone(this.foragingPheromone);
+        selfContainedDispersePheromone(this.foodPheromone);
+
+        dropFoodSourcePheromones();
+    }
+
+    /**
+     * Self-contained implementation of disperse pheromones
+     * not using dispersal policy interface
+     */
+    @SuppressWarnings("ArrayEquality")
+    private void selfContainedDispersePheromone(final float[][] pheromone) {
+        final float[][] tmpP = new float[this.width][this.height];
+        for(int x = 0; x < this.width; x++) {
+            for(int y = 0; y < this.height; y++) {
+                float npl = 0.0F;
+                final Position p = new Position((float) x, (float) y);
+                if (!isObstacle(p)) {
+                    npl = sumAdjacentCells(x, y, pheromone);
+                    npl = ((1.0F - PHEROMONE_NEIGHBOUR_KEEP) * npl) / NUMBER_OF_NEIGHBOURS + (PHEROMONE_NEIGHBOUR_KEEP * (pheromone[x][y]));
+                }
+                tmpP[x][y] = npl * PHEROMONE_DROPOFF;
+            }
+        }
+        if (pheromone == this.foodPheromone) {
+            this.foodPheromone = tmpP;
+        } else {
+            this.foragingPheromone = tmpP;
+        }
+    }
+
+    private float sumAdjacentCells(final int x0, final int y0, final float[][] matrix) {
+        float sum = 0.0F;
+        for (final int[] deltas : ADJACENT_CELL_DELTAS) {
+
+                // Truncate coordinates to the closest inbound value
+                final int x = truncate(0, this.width - 1, x0 + deltas[0]);
+                final int y = truncate(0, this.height - 1, y0 + deltas[1]);
+
+                sum += matrix[x][y];
+        }
+        return sum;
+    }
+
+    private static int truncate(final int min, final int max, final int val) {
+        // If value is too big, round down to max value ELSE if value is too small round up to minimum value
+        return ((val > max) ? max : Math.max(val, min));
 
     }
 
     @Override
-    public void hitObstacle(final Position p, final float strength) {
+    public void setObstacle(final Position p, final boolean add) { }
 
+    @Override
+    public void hitObstacle(final Position p, final float strength) { }
+
+    @Override
+    public String toString() {
+        return "MyAntWorld{" +
+                "width=" + this.width +
+                ", height=" + this.height +
+                ", foodSources=" + this.foodSources +
+                '}';
     }
-                 }
+}
