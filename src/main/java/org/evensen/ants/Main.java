@@ -57,8 +57,9 @@ public class Main extends Application {
     private Collection<AntHazard> hazards;
 
     public Main() {
+        DispersalPolicy dispersalPolicy = new MyDispersalPolicy();
         // Create a new world with size WORLD_WIDTH * WORLD_HEIGHT and 4 food sources.
-        this.world = new MyAntWorld(WORLD_WIDTH, WORLD_HEIGHT, 4);
+        this.world = new MyAntWorld(WORLD_WIDTH, WORLD_HEIGHT, 4, dispersalPolicy);
 
         this.colony = new AntColony(ANTS, PHEROMONE_RATE, this.world);
         this.drawAnts = true;

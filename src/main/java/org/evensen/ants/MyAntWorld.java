@@ -10,11 +10,6 @@ public class MyAntWorld implements AntWorld {
     private static final int FOOD_SOURCE_RADIUS = 10;
     private static final int FOOD_SOURCE_START_AMOUNT = 50000;
     private static final float MAX_PHEROMONE_LEVEL = 1.0f;
-    private static final float PHEROMONE_DROPOFF = 0.95F;
-    private static final float PHEROMONE_NEIGHBOUR_KEEP = 0.5f;
-    private static final int[][] ADJACENT_CELL_DELTAS = {{-1,  1}, { 0,  1}, {1,  1},
-                                                         {-1,  0},           {1,  0},
-                                                         {-1, -1}, { 0, -1}, {1, -1}}; // Pls don't auto format :(
 
     // Generators
     private static final Random rand = new Random(5L);
@@ -25,9 +20,10 @@ public class MyAntWorld implements AntWorld {
     private float[][] foragingPheromone;
     private final int[][] containsFood;
     private final List<FoodSource> foodSources;
+    private final DispersalPolicy dispersalPolicy;
 
     // Constructor, width of world, height of world, number of food sources
-    public MyAntWorld(final int w, final int h, final int foodSources) {
+    public MyAntWorld(final int w, final int h, final int foodSources, DispersalPolicy dispersalPolicy) {
         // Initialize instance variables and set capacity
         this.width = w;
         this.height = h;
@@ -35,6 +31,7 @@ public class MyAntWorld implements AntWorld {
         this.foragingPheromone = new float[w][h];
         this.foodSources = new ArrayList<>(foodSources);
         this.containsFood = new int[w][h];
+        this.dispersalPolicy = dispersalPolicy;
 
         // Initialize food sources
         for (int i = 0; i < foodSources; i++) {
@@ -115,7 +112,7 @@ public class MyAntWorld implements AntWorld {
         final int x = (int) Math.floor(p.getX());
         final int y = (int) Math.floor(p.getY());
 
-        // Already max value // TODO remove this?
+        // Already max value
         if (pheromoneMatrix[x][y] == MAX_PHEROMONE_LEVEL) {
             return;
         }
@@ -206,29 +203,25 @@ public class MyAntWorld implements AntWorld {
 
     @Override
     public void dispersePheromones() {
-        dispersePheromone(this.foragingPheromone);
-        dispersePheromone(this.foodPheromone);
+        dispersePheromones(this.foragingPheromone);
+        dispersePheromones(this.foodPheromone);
 
         dropFoodSourcePheromones();
     }
 
-    private void dispersePheromone(final float[][] pheromone) {
+    private void dispersePheromones(final float[][] pheromone) {
         final float[][] tmpP = new float[this.width][this.height];
-        final float numberOfNeighbours = 8.0F;
+        boolean isForage = pheromone == this.foragingPheromone;
         for(int x = 0; x < this.width; x++) {
             for(int y = 0; y < this.height; y++) {
-                float npl = 0.0F;
-                if (!isObstacle(x, y)) {
-                    npl = sumAdjacentCells(x, y, pheromone);
-                    npl = ((1.0F - PHEROMONE_NEIGHBOUR_KEEP) * npl) / numberOfNeighbours + (PHEROMONE_NEIGHBOUR_KEEP * (pheromone[x][y]));
-                }
-                tmpP[x][y] = npl * PHEROMONE_DROPOFF;
+                Position p = new Position(x, y);
+                tmpP[x][y] = this.dispersalPolicy.getDispersedValue(this, p, isForage);
             }
         }
-        if (pheromone == this.foodPheromone) {
-            this.foodPheromone = tmpP;
-        } else {
+        if (isForage) {
             this.foragingPheromone = tmpP;
+        } else {
+            this.foodPheromone = tmpP;
         }
     }
 
@@ -236,29 +229,6 @@ public class MyAntWorld implements AntWorld {
         for (final FoodSource source : this.foodSources) {
             dropFoodPheromone(source.getPosition(), 1.0F);
         }
-    }
-
-    private float sumAdjacentCells(final int x0, final int y0, float[][] matrix) {
-        float sum = 0.0F;
-        for (int[] deltas : ADJACENT_CELL_DELTAS) {
-
-                // Truncate coordinates to the closest inbound value
-                int x = truncate(0, this.width - 1, x0 + deltas[0]);
-                int y = truncate(0, this.height - 1, y0 + deltas[1]);
-
-                sum += matrix[x][y];
-        }
-        return sum;
-    }
-
-    private static int truncate(final int min, final int max, int val) {
-        if (val < min) {
-            return min;
-        }
-        if (val > max) {
-            return max;
-        }
-        return val;
     }
 
     @Override
