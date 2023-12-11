@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-/**
- * ANT WORLD
- */
 public class MyAntWorld implements AntWorld {
 
     // Constants
@@ -31,11 +28,6 @@ public class MyAntWorld implements AntWorld {
     private final List<FoodSource> foodSources;
     private final DispersalPolicy dispersalPolicy;
 
-    /**
-     * @param w width of world
-     * @param h height of world
-     * @param foodSources number of food sources to create
-     */
     // Constructor, width of world, height of world, number of food sources
     public MyAntWorld(final int w, final int h, final int foodSources, final DispersalPolicy dispersalPolicy) {
         // Initialize instance variables and set capacity
@@ -59,7 +51,6 @@ public class MyAntWorld implements AntWorld {
 
     // Used for optimizing, through avoiding unnecessary multiple similar calculations
     // Contains the index of the food source that contains the associated food (-1 if there is no food)
-    @SuppressWarnings({"MethodWithMultipleLoops", "FeatureEnvy"})
     private void updateContainsFoodMatrix() {
         for (int x = 0; x < this.width; x++) {
             for (int y = 0; y < this.height; y++) {
@@ -289,13 +280,4 @@ public class MyAntWorld implements AntWorld {
 
     @Override
     public void hitObstacle(final Position p, final float strength) { }
-
-    @Override
-    public String toString() {
-        return "MyAntWorld{" +
-                "width=" + this.width +
-                ", height=" + this.height +
-                ", foodSources=" + this.foodSources +
-                '}';
-    }
 }
