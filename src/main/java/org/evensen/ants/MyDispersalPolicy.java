@@ -1,5 +1,9 @@
 package org.evensen.ants;
 
+import javafx.geometry.Pos;
+
+import java.util.function.Function;
+
 public class MyDispersalPolicy implements DispersalPolicy {
 
     // Constants
@@ -21,12 +25,14 @@ public class MyDispersalPolicy implements DispersalPolicy {
         float nplForage = 0.0F;
         if (!w.isObstacle(p)) {
             // New levels for food pheromone
-            nplFood = sumAdjacentCellsFood(x, y, w);
+            final Function<Position, Float> getFoodStrength = w::getFoodStrength;
+            nplFood = sumAdjacentCells(x, y, w, getFoodStrength);
             nplFood = ((1.0F - PHEROMONE_NEIGHBOUR_KEEP) * nplFood) / NUMBER_OF_NEIGHBOURS + (PHEROMONE_NEIGHBOUR_KEEP * (w.getFoodStrength(p)));
             nplFood = nplFood * PHEROMONE_DROPOFF;
 
             // New levels for forage pheromone
-            nplForage = sumAdjacentCellsForage(x, y, w);
+            final Function<Position, Float> getForageStrength = w::getForagingStrength;
+            nplForage = sumAdjacentCells(x, y, w, getForageStrength);
             nplForage = ((1.0F - PHEROMONE_NEIGHBOUR_KEEP) * nplForage) / NUMBER_OF_NEIGHBOURS + (PHEROMONE_NEIGHBOUR_KEEP * (w.getForagingStrength(p)));
             nplForage = nplForage * PHEROMONE_DROPOFF;
 
@@ -36,7 +42,7 @@ public class MyDispersalPolicy implements DispersalPolicy {
 
     }
 
-    private static float sumAdjacentCellsFood(final int x0, final int y0, final AntWorld w) {
+    private static float sumAdjacentCells(final int x0, final int y0, final AntWorld w, final Function<Position, Float> getPheromoneStrength) {
         float sum = 0.0F;
         for (final int[] deltas : ADJACENT_CELL_DELTAS) {
 
@@ -45,21 +51,7 @@ public class MyDispersalPolicy implements DispersalPolicy {
             final int y = truncate(0, w.getHeight() - 1, y0 + deltas[1]);
             final Position p = new Position((float) x, (float) y);
 
-            sum += w.getFoodStrength(p);
-        }
-        return sum;
-    }
-
-    private static float sumAdjacentCellsForage(final int x0, final int y0, final AntWorld w) {
-        float sum = 0.0F;
-        for (final int[] deltas : ADJACENT_CELL_DELTAS) {
-
-            // Truncate coordinates to the closest inbound value
-            final int x = truncate(0, w.getWidth() - 1, x0 + deltas[0]);
-            final int y = truncate(0, w.getHeight() - 1, y0 + deltas[1]);
-            final Position p = new Position((float) x, (float) y);
-
-            sum += w.getForagingStrength(p);
+            sum += getPheromoneStrength.apply(p);
         }
         return sum;
     }
