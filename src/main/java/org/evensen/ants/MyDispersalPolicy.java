@@ -1,7 +1,5 @@
 package org.evensen.ants;
 
-import javafx.geometry.Pos;
-
 import java.util.function.Function;
 
 public class MyDispersalPolicy implements DispersalPolicy {
@@ -25,14 +23,12 @@ public class MyDispersalPolicy implements DispersalPolicy {
         float nplForage = 0.0F;
         if (!w.isObstacle(p)) {
             // New levels for food pheromone
-            final Function<Position, Float> getFoodStrength = w::getFoodStrength;
-            nplFood = sumAdjacentCells(x, y, w, getFoodStrength);
+            nplFood = sumAdjacentCells(x, y, w, w::getFoodStrength);
             nplFood = ((1.0F - PHEROMONE_NEIGHBOUR_KEEP) * nplFood) / NUMBER_OF_NEIGHBOURS + (PHEROMONE_NEIGHBOUR_KEEP * (w.getFoodStrength(p)));
             nplFood = nplFood * PHEROMONE_DROPOFF;
 
             // New levels for forage pheromone
-            final Function<Position, Float> getForageStrength = w::getForagingStrength;
-            nplForage = sumAdjacentCells(x, y, w, getForageStrength);
+            nplForage = sumAdjacentCells(x, y, w, w::getForagingStrength);
             nplForage = ((1.0F - PHEROMONE_NEIGHBOUR_KEEP) * nplForage) / NUMBER_OF_NEIGHBOURS + (PHEROMONE_NEIGHBOUR_KEEP * (w.getForagingStrength(p)));
             nplForage = nplForage * PHEROMONE_DROPOFF;
 

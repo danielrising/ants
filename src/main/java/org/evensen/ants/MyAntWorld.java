@@ -14,7 +14,7 @@ public class MyAntWorld implements AntWorld {
     private static final float PHEROMONE_NEIGHBOUR_KEEP = 0.5f;
     private static final float NUMBER_OF_NEIGHBOURS = 8.0f;
     private static final int[][] ADJACENT_CELL_DELTAS = {{-1,  1}, { 0,  1}, {1,  1},
-                                                         {-1,  0},           {1,  0},
+                                                         {-1,  0}, /*CELL*/  {1,  0},
                                                          {-1, -1}, { 0, -1}, {1, -1}}; // Pls don't auto format :(
 
     // Generators
